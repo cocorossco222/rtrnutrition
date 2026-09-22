@@ -82,7 +82,7 @@ test("a brand-new, un-onboarded Companion exports a valid snapshot", () => {
 });
 test("a part-finished baseline exports a valid snapshot", () => {
   const t = boot();
-  t.click('[data-act="ob-start"]');
+  startBaseline(t);
   t.click(t.d.querySelector('[data-act="ob-a"]'));
   assertValid(t.exp(), "interrupted onboarding");
 });
