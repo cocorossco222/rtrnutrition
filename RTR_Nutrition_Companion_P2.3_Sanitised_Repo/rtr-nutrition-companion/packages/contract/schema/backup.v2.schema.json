@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rtr:nutrition-companion:backup:v2",
+  "title": "RTR Nutrition Companion — backup and sync snapshot, schema 2",
+  "description": "The exact envelope produced by exportPayload() in apps/companion/index.html at SCHEMA = 2. This is the single source of truth for the boundary between the local-first client and any server. Known fields are validated strictly; unknown fields are permitted, because the client evolves additively within a schema version. A breaking change means a new schema file, never an edit to this one.",
+  "type": "object",
+  "required": ["meta", "data"],
+  "properties": {
+    "meta": { "$ref": "#/$defs/meta" },
+    "data": { "$ref": "#/$defs/state" }
+  },
+
+  "$defs": {
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+    },
+    "isoDateTime": { "type": "string", "format": "date-time" },
+    "nullableDateTime": {
+      "anyOf": [ { "type": "null" }, { "$ref": "#/$defs/isoDateTime" } ]
+    },
+    "count": { "type": "integer", "minimum": 0 },
+
+    "meta": {
+      "type": "object",
+      "required": ["product", "schema", "app", "exported"],
+      "properties": {
+        "product":  { "const": "RTR Nutrition Companion" },
+        "phase":    { "type": "string", "maxLength": 80 },
+        "client":   {
+          "type": "string", "maxLength": 80,
+          "description": "Display name only. A server must never use this as identity — identity comes from the credential."
+        },
+        "schema":   { "const": 2 },
+        "app":      { "type": "string", "pattern": "^p[0-9][0-9a-z.]*$", "maxLength": 20 },
+        "exported": { "$ref": "#/$defs/isoDateTime" },
+        "counts": {
+          "type": "object",
+          "properties": {
+            "checkIns":       { "$ref": "#/$defs/count" },
+            "bodyChecks":     { "$ref": "#/$defs/count" },
+            "weeklyCheckIns": { "$ref": "#/$defs/count" }
+          }
+        }
+      }
+    },
+
+    "state": {
+      "type": "object",
+      "required": ["schema", "profile", "entries"],
+      "properties": {
+        "schema":  { "const": 2 },
+        "v":       { "const": 1 },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "name":      { "type": "string", "maxLength": 80 },
+            "created":   { "$ref": "#/$defs/isoDateTime" },
+            "onboarded": { "type": "boolean" }
+          }
+        },
+        "obDraft":  { "anyOf": [ { "type": "null" }, { "type": "object" } ] },
+        "baseline": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["answers"],
+              "properties": {
+                "date": { "$ref": "#/$defs/isoDateTime" },
+                "answers": {
+                  "type": "object",
+                  "propertyNames": { "pattern": "^q[0-9]{1,2}$" },
+                  "additionalProperties": { "type": "integer", "minimum": 1, "maximum": 4 }
+                }
+              }
+            }
+          ]
+        },
+        "entries": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/isoDate" },
+          "additionalProperties": { "$ref": "#/$defs/entry" }
+        },
+        "body": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/isoDate" },
+          "additionalProperties": { "$ref": "#/$defs/bodyCheck" }
+        },
+        "sitreps": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/isoDate" },
+          "additionalProperties": { "$ref": "#/$defs/sitrep" }
+        },
+        "seen": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/isoDateTime" }
+        },
+        "today": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "properties": {
+                "date":     { "$ref": "#/$defs/isoDate" },
+                "lessonId": { "type": "string", "maxLength": 60 }
+              }
+            }
+          ]
+        },
+        "coach": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ts":     { "$ref": "#/$defs/isoDateTime" },
+              "action": { "type": "string", "maxLength": 60 },
+              "note":   { "type": "string", "maxLength": 2000 }
+            }
+          }
+        },
+        "prefs": {
+          "type": "object",
+          "properties": {
+            "weightUnit": { "enum": ["kg", "lb", "st"] },
+            "waistUnit":  { "enum": ["cm", "in"] }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "opens":      { "$ref": "#/$defs/count" },
+            "firstOpen":  { "$ref": "#/$defs/nullableDateTime" },
+            "lastOpen":   { "$ref": "#/$defs/nullableDateTime" },
+            "lastExport": { "$ref": "#/$defs/nullableDateTime" },
+            "views":      { "type": "object" }
+          }
+        },
+        "insightLog": {
+          "type": "array",
+          "maxItems": 400,
+          "description": "The client caps this log at 400 items. A longer one means something upstream is wrong.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "d":    { "$ref": "#/$defs/isoDate" },
+              "text": { "type": "string", "maxLength": 400 },
+              "tone": { "enum": ["living", "watch", "neutral"] }
+            }
+          }
+        },
+        "reportLog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "week": { "$ref": "#/$defs/isoDate" },
+              "ts":   { "$ref": "#/$defs/isoDateTime" }
+            }
+          }
+        },
+        "defer": {
+          "type": "object",
+          "properties": { "sitrep": { "$ref": "#/$defs/isoDate" } }
+        },
+        "phase": {
+          "type": "object",
+          "properties": {
+            "key":    { "type": "string", "maxLength": 40 },
+            "name":   { "type": "string", "maxLength": 40 },
+            "locked": { "type": "boolean" }
+          }
+        }
+      }
+    },
+
+    "entry": {
+      "description": "One daily check-in. Mirrors the client's own acceptance rule in validateBackup(): at least one known metric must be present, and every known metric that is present must hold a value from SCALE.",
+      "type": "object",
+      "properties": {
+        "meals":    { "enum": ["no", "mostly", "yes"] },
+        "protein":  { "enum": ["low", "some", "good"] },
+        "plants":   { "enum": ["low", "some", "plenty"] },
+        "water":    { "enum": ["behind", "nearly", "nailed"] },
+        "gut":      { "enum": ["rough", "ok", "good"] },
+        "energy":   { "enum": ["low", "ok", "good"] },
+        "symptoms": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["Bloating", "Pain", "Loose", "Constipation", "Reflux", "Other"] }
+        },
+        "note": { "type": "string", "maxLength": 400 },
+        "ts":   { "$ref": "#/$defs/isoDateTime" }
+      },
+      "anyOf": [
+        { "required": ["meals"] },   { "required": ["protein"] },
+        { "required": ["plants"] },  { "required": ["water"] },
+        { "required": ["gut"] },     { "required": ["energy"] }
+      ]
+    },
+
+    "bodyCheck": {
+      "description": "Weekly weight and/or waist, stored canonically in kg and cm with the unit the client typed. Bounds mirror the client's own sanity checks.",
+      "type": "object",
+      "properties": {
+        "weightKg":   { "anyOf": [ { "type": "null" }, { "type": "number", "minimum": 20, "maximum": 400 } ] },
+        "waistCm":    { "anyOf": [ { "type": "null" }, { "type": "number", "minimum": 30, "maximum": 250 } ] },
+        "weightUnit": { "enum": ["kg", "lb", "st"] },
+        "waistUnit":  { "enum": ["cm", "in"] },
+        "ts":         { "$ref": "#/$defs/isoDateTime" },
+        "updated":    { "$ref": "#/$defs/isoDateTime" }
+      },
+      "anyOf": [
+        { "required": ["weightKg"], "properties": { "weightKg": { "type": "number" } } },
+        { "required": ["waistCm"],  "properties": { "waistCm":  { "type": "number" } } }
+      ]
+    },
+
+    "sitrep": {
+      "description": "The weekly check-in (SITREP). Empty strings are the client's representation of an unanswered question.",
+      "type": "object",
+      "properties": {
+        "week":     { "$ref": "#/$defs/isoDate" },
+        "best":     { "enum": ["", "meals", "protein", "plants", "water", "snacks", "gut"] },
+        "hardest":  { "enum": ["", "meals", "protein", "plants", "water", "snacks", "gut"] },
+        "improve":  { "enum": ["", "meals", "protein", "plants", "water", "snacks", "gut"] },
+        "gut":      { "enum": ["", "good", "mixed", "rough"] },
+        "energy":   { "enum": ["", "good", "updown", "low"] },
+        "bestText": { "type": "string", "maxLength": 300 },
+        "hardText": { "type": "string", "maxLength": 300 },
+        "ts":       { "$ref": "#/$defs/isoDateTime" }
+      }
+    }
+  }
+}
