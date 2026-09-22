@@ -2,6 +2,7 @@
 /* ==================================================================
    The client and the contract, checked against each other.
 
+
    The Companion cannot import @rtr/contract — it is one file with no
    build step. So this suite runs the real app in jsdom, drives it into
    each meaningful state, and validates what exportPayload() produces.
