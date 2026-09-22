@@ -50,9 +50,21 @@ function assertValid(payload, label){
   const r = validateSnapshot(payload);
   assert.equal(r.ok, true, label + " failed the contract: " + JSON.stringify(r.errors));
 }
-function onboard(t){
+function startBaseline(t){
   t.click('[data-act="ob-start"]');
-  for(let i = 0; i < 10; i++) t.click(t.d.querySelector('[data-act="ob-a"]'));
+
+  const name = t.d.querySelector("#obname");
+  if(name){
+    name.value = "Synthetic Client";
+    t.click('[data-act="ob-name"]');
+  }
+}
+
+function onboard(t){
+  startBaseline(t);
+  for(let i = 0; i < 10; i++){
+    t.click(t.d.querySelector('[data-act="ob-a"]'));
+  }
   t.click('[data-act="ob-done"]');
 }
 function checkIn(t, vals){
