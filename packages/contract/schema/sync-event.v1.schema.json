@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rtr:nutrition-companion:sync-event:v1",
+  "title": "RTR Nutrition Companion queued sync event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "eventId", "deviceId", "eventType", "occurredAt", "dayKey", "payload"],
+  "properties": {
+    "schema": { "const": 1 },
+    "eventId": { "type": "string", "format": "uuid" },
+    "deviceId": { "type": "string", "format": "uuid" },
+    "eventType": { "enum": ["day.resolved", "coach.update"] },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "dayKey": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$" },
+    "payload": { "type": "object", "maxProperties": 40 }
+  }
+}

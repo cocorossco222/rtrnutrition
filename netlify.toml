@@ -1,0 +1,14 @@
+[build]
+  command = "npm ci && npm test && npm run build:static"
+  publish = "dist/companion"
+
+[build.environment]
+  NODE_VERSION = "22.22.2"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-Frame-Options = "DENY"
